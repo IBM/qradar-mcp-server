@@ -49,8 +49,8 @@ podman run -d --name qradar-mcp-server \
 ### Token Efficiency
 
 **Why 4 Tools = 728 Endpoints:**
-- <span style="color: red">Traditional approach: 728 individual tools = ~500,000+ tokens per message</span>
-- <span style="color: green">Our approach: 4 generic tools = ~1,000 tokens per message</span>
+- ❌ Traditional approach: 728 individual tools = ~500,000+ tokens per message
+- ✅ Our approach: 4 generic tools = ~1,000 tokens per message
 - **Result:** 500x more efficient token usage
 
 Every MCP request includes all tool definitions. With 4 tools instead of 728, Claude can access the full QRadar API without overwhelming token budgets.
