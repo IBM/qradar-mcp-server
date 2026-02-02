@@ -1,6 +1,51 @@
 # QRadar MCP Server
 
-**Model Context Protocol (MCP) server for IBM QRadar SIEM** - Provides 728+ QRadar REST API endpoints through 4 intelligent MCP tools.
+**Model Context Protocol (MCP) server for IBM QRadar SIEM** - Access 728+ QRadar REST API endpoints through just 4 intelligent MCP tools.
+
+---
+
+## 🎯 What is This?
+
+QRadar MCP Server bridges the gap between **Large Language Models (LLMs)** and **IBM QRadar SIEM**. It enables natural language interactions with your security data—no need to memorize 728 API endpoints.
+
+### The Problem
+- QRadar has **728+ REST API endpoints** — overwhelming for developers and LLMs alike
+- Traditional approach: Define each endpoint as a separate tool → **massive token consumption**
+- Result: Expensive API calls, slow responses, context limits exceeded
+
+### The Solution
+Instead of exposing 728 tools, we expose **just 4 intelligent tools**:
+
+| Traditional Approach | MCP Server Approach |
+|---------------------|---------------------|
+| 728 tool definitions | **4 tool definitions** |
+| ~50,000 tokens/request | **~2,000 tokens/request** |
+| Context overflow risk | Fits any LLM context |
+| Slow tool discovery | Instant endpoint lookup |
+
+### Token Efficiency
+- **96% reduction** in tool definition tokens
+- **25x faster** LLM processing
+- Works with any LLM (Claude, GPT, Gemini, Llama)
+
+### Who Should Use This?
+- **Security analysts** wanting natural language QRadar queries
+- **DevOps teams** automating security workflows
+- **AI developers** building QRadar-integrated applications
+- **SOC teams** needing quick incident data access
+
+---
+
+## 🌐 Experience It Live
+
+### IBM MCP Client (Web UI)
+Try the full experience with our React + FastAPI client:
+
+**Demo URL:** [http://9.30.147.112:8000](http://9.30.147.112:8000)
+
+> Ask questions like: *"Show me top 10 offenses"*, *"How many assets do we have?"*, *"Get system version"*
+
+---
 
 ## 🏗️ Architecture
 
