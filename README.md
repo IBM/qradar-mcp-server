@@ -145,43 +145,7 @@ python -m src.server
 - Use in Claude Desktop MCP configuration
 - No network exposure needed
 
-## 🐳 Container Details
-
-### Multi-Architecture Support
-Images built for:
-- **linux/amd64** - Intel/AMD x86_64 servers
-- **linux/arm64** - Apple Silicon, ARM-based servers
-
-### Container Registry
-```bash
-# GitHub Container Registry (public)
-ghcr.io/addanuj/qradar-mcp-server:latest
-```
-
-### Dockerfile Structure
-```dockerfile
-FROM python:3.12-alpine          # Lightweight base
-WORKDIR /app                     # Working directory
-COPY pyproject.toml src/ ./      # Copy source
-RUN pip install -e .             # Install package
-EXPOSE 8001                      # HTTP port
-ENTRYPOINT ["python", "-m", "src.server"]
-```
-
-### Build Multi-Arch Image
-```bash
-# Enable buildx
-docker buildx create --use --name multiarch
-
-# Build for both platforms
-docker buildx build \
-  --platform linux/amd64,linux/arm64 \
-  -t ghcr.io/addanuj/qradar-mcp-server:latest \
-  -f container/Dockerfile \
-  --push .
-```
-
-## 🔍 Usage Examples
+##  Usage Examples
 
 ### Check Server Health
 ```bash
@@ -233,19 +197,12 @@ QRadar-MCP-Server/
 │   ├── __init__.py
 │   ├── __main__.py            # Entry point
 │   ├── server.py              # FastAPI server (HTTP mode)
-│   ├── client.py              # QRadar API client
-│   └── tools/
-│       ├── __init__.py
-│       ├── siem.py            # SIEM endpoints (offenses, etc.)
-│       ├── assets.py          # Asset management
-│       ├── ariel.py           # AQL search engine
-│       ├── config.py          # Configuration endpoints
-│       ├── system.py          # System info
-│       └── ...                # 20+ tool modules
+│   ├── client.py              # QRadar API client wrapper
+│   └── tools.py               # 4 MCP tools with 728 endpoint definitions
 └── pyproject.toml             # Python package config
 ```
 
-##  Supported QRadar Versions
+## 🚦 Supported QRadar Versions
 
 - QRadar 7.3.x ✅ (tested)
 - QRadar 7.4.x ✅ (tested)
@@ -268,3 +225,15 @@ QRadar-MCP-Server/
 - Check logs: `docker logs qradar-mcp-server`
 - Search existing issues: https://github.ibm.com/ashrivastava/QRadar-MCP-Server/issues
 - Contact: ashrivastava@ibm.com
+
+---
+
+## ⚠️ Disclaimer
+
+**This is a Minimum Viable Product (MVP) for testing and demonstration purposes only.**
+
+- **NOT for production use**
+- **No warranty or support guarantees**
+- **Use at your own risk**
+- For production deployments, conduct thorough security review and testing
+- IBM is not responsible for any issues arising from the use of this software
