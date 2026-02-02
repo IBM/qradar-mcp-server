@@ -46,7 +46,7 @@ graph TB
 | Tool | Description | Example |
 |------|-------------|---------|
 | `qradar_get` | Fetch data from 728 endpoints | Get offenses, assets, rules |
-| `qradar_post` | Create/update resources | Create reference sets |
+| `qradar_execute` | Create/update resources | Create reference sets, update rules |
 | `qradar_delete` | Remove resources | Delete offense notes |
 | `qradar_discover` | Auto-discover endpoints | Find correct API paths |
 
@@ -61,13 +61,13 @@ graph TB
 
 ## 🚀 Quick Start
 
-### Option 1: Pull from Registry
+### Option 1: Pull from Registry (Run as Container)
 
 ```bash
 # Pull multi-architecture image
 docker pull ghcr.io/addanuj/qradar-mcp-server:latest
 
-# Run with environment variables
+# Run as container
 docker run -d \
   --name qradar-mcp-server \
   -p 8001:8001 \
@@ -78,17 +78,17 @@ docker run -d \
   --host 0.0.0.0 --port 8001
 ```
 
-### Option 2: Build from Source
+### Option 2: Build from Source (Run as Container)
 
 ```bash
 # Clone repository
 git clone https://github.ibm.com/ashrivastava/QRadar-MCP-Server.git
 cd QRadar-MCP-Server
 
-# Build container
+# Build container image
 docker build -t qradar-mcp-server:latest -f container/Dockerfile .
 
-# Run
+# Run as container
 docker run -d \
   --name qradar-mcp-server \
   -p 8001:8001 \
@@ -98,7 +98,7 @@ docker run -d \
   --host 0.0.0.0 --port 8001
 ```
 
-### Option 3: Local Development
+### Option 3: Local Development (Run as Python Service)
 
 ```bash
 # Install dependencies
@@ -108,11 +108,11 @@ pip install -e .
 export QRADAR_HOST="https://your-qradar.com"
 export QRADAR_API_TOKEN="your-token"
 
-# Run in HTTP mode
-python -m src.server --host 0.0.0.0 --port 8001
-
-# OR Run in stdio mode (for Claude Desktop)
+# Run in stdio mode (for Claude Desktop)
 python -m src.server
+
+# OR run in HTTP mode for local testing
+python -m src.server --host 0.0.0.0 --port 8001
 ```
 
 ## 🔧 Configuration
@@ -245,98 +245,26 @@ QRadar-MCP-Server/
 └── pyproject.toml             # Python package config
 ```
 
-## 🔐 Security Best Practices
+##  Supported QRadar Versions
 
-### DO NOT Hardcode Credentials
-❌ **Bad:**
-```python
-QRADAR_TOKEN = "4edfffda-86ee-..."  # Hardcoded
-```
-
-✅ **Good:**
-```bash
-export QRADAR_API_TOKEN="your-token"
-docker run -e QRADAR_API_TOKEN=$QRADAR_API_TOKEN ...
-```
-
-### Use Secrets Management
-```bash
-# Docker secrets
-echo "your-token" | docker secret create qradar_token -
-docker service create --secret qradar_token ...
-
-# Kubernetes secrets
-kubectl create secret generic qradar-creds \
-  --from-literal=token=your-token
-```
-
-### SSL Verification
-For production:
-```bash
--e QRADAR_VERIFY_SSL="true"
-```
-
-## 🐛 Troubleshooting
-
-### Container Not Starting
-```bash
-# Check logs
-docker logs qradar-mcp-server
-
-# Common issues:
-# - Missing QRADAR_HOST or QRADAR_API_TOKEN
-# - Port 8001 already in use
-# - QRadar console unreachable
-```
-
-### Connection Refused
-```bash
-# Test QRadar connectivity from container
-docker exec qradar-mcp-server wget -O- https://your-qradar.com/api/system/about
-
-# Check firewall rules
-# Ensure container can reach QRadar on port 443
-```
-
-### 401 Unauthorized
-```bash
-# Verify token is valid
-curl -H "SEC: your-token" https://your-qradar.com/api/system/about
-
-# Regenerate token in QRadar:
-# Admin → System Settings → Authorized Services
-```
-
-## 📊 Performance
-
-- **Response Time:** < 2s for most endpoints
-- **Concurrent Requests:** Supports 100+ simultaneous clients
-- **Memory:** ~50MB base + 10MB per active connection
-- **Startup Time:** < 2 seconds
-
-## 🚦 Supported QRadar Versions
-
-- QRadar 7.3.x
-- QRadar 7.4.x
+- QRadar 7.3.x ✅ (tested)
+- QRadar 7.4.x ✅ (tested)
 - QRadar 7.5.x ✅ (tested)
-- QRadar on Cloud
-
-## 📝 License
-
-IBM Internal Use Only
-
-## 🤝 Contributing
-
-This is an internal IBM project. For access or questions, contact the QRadar MCP team.
-
-## 🔗 Related Projects
-
-- **IBM MCP Client** - React + FastAPI web interface for QRadar MCP
-- **Claude Desktop MCP** - Use with Claude Desktop via stdio mode
 
 ## 📞 Support
 
-For issues or questions:
-1. Check logs: `docker logs qradar-mcp-server`
-2. Review troubleshooting section
-3. Contact: ashrivastava@ibm.com
+### Reporting Issues & Feature Requests
+
+**Found a bug?**
+1. Go to: https://github.ibm.com/ashrivastava/QRadar-MCP-Server/issues
+2. Click **"New Issue"**
+3. Provide: clear title, steps to reproduce, QRadar version, and logs (`docker logs qradar-mcp-server`)
+
+**Have a suggestion?**
+1. Open issue with **[Feature Request]** prefix
+2. Describe use case and expected behavior
+
+**Need help?**
+- Check logs: `docker logs qradar-mcp-server`
+- Search existing issues: https://github.ibm.com/ashrivastava/QRadar-MCP-Server/issues
+- Contact: ashrivastava@ibm.com
