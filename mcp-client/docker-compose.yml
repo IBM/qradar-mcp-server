@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  mcp-client:
+    image: mcp-client:latest
+    container_name: mcp-client
+    ports:
+      - "8080:8000"
+    volumes:
+      - ~/.mcp-client:/root/.mcp-client
+    environment:
+      - CONFIG_DIR=/root/.mcp-client
+    depends_on:
+      - mcp-server
+    networks:
+      - mcp-network
+
+  mcp-server:
+    image: ghcr.io/addanuj/qradar-mcp-server:latest
+    container_name: qradar-mcp-server
+    environment:
+      - QRADAR_HOST=${QRADAR_HOST}
+      - QRADAR_API_TOKEN=${QRADAR_API_TOKEN}
+    networks:
+      - mcp-network
+
+networks:
+  mcp-network:
+    driver: bridge
