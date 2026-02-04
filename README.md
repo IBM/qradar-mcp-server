@@ -108,13 +108,23 @@ graph TB
 
 ## 🚀 Quick Start
 
-### Option 1: Pull from Registry (Run as Container)
+### Option 1: Pull Public Image from GitHub (Recommended)
 
+**No build required!** Pull our pre-built multi-architecture image and run instantly.
+
+**Public Container Registry:** `ghcr.io/addanuj/qradar-mcp-server:latest`
+
+**Step 1:** Pull the image
 ```bash
-# Pull multi-architecture image
 docker pull ghcr.io/addanuj/qradar-mcp-server:latest
+```
 
-# Run as container
+**Step 2:** Prepare your QRadar credentials
+- QRadar Console URL: `https://your-qradar-console.com`
+- API Token: Get from QRadar Console → Admin → Authorized Services
+
+**Step 3:** Run the container
+```bash
 docker run -d \
   --name qradar-mcp-server \
   -p 8001:8001 \
@@ -124,6 +134,26 @@ docker run -d \
   ghcr.io/addanuj/qradar-mcp-server:latest \
   --host 0.0.0.0 --port 8001
 ```
+
+**Step 4:** Verify it's running
+```bash
+# Check container status
+docker ps | grep qradar-mcp-server
+
+# Check health endpoint
+curl http://localhost:8001/health
+# Expected: {"status":"healthy","mode":"http","tools":4,"endpoints":728}
+```
+
+**Supported Architectures:**
+- ✅ AMD64 (x86_64) - Intel/AMD processors
+- ✅ ARM64 (aarch64) - Apple Silicon, AWS Graviton
+
+**Image Details:**
+- Registry: GitHub Container Registry (ghcr.io)
+- Image: `ghcr.io/addanuj/qradar-mcp-server:latest`
+- Public Access: No authentication needed
+- Auto-updated: New commits trigger automatic builds
 
 ### Option 2: Build from Source (Run as Container)
 
