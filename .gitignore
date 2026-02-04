@@ -1,0 +1,36 @@
+# Environment and secrets
+.env
+.env.*
+*.env
+
+# Documentation (push only when instructed)
+*.md
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Container build cache
+*.tar
