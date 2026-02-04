@@ -45,6 +45,9 @@ RUN mkdir -p /root/.mcp-client
 ENV PYTHONUNBUFFERED=1
 ENV CONFIG_DIR=/root/.mcp-client
 
+# Declare volume for config persistence
+VOLUME ["/root/.mcp-client"]
+
 # Expose port
 EXPOSE 8000
 

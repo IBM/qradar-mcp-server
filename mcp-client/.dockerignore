@@ -1,0 +1,17 @@
+# Ignore these in Docker build
+.git
+.github
+.gitignore
+*.md
+image/
+node_modules/
+__pycache__/
+*.pyc
+.env
+*.env
+.env.*
+*.log
+*.tmp
+*.bak
+.DS_Store
+docker-compose.yml

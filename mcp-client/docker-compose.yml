@@ -2,12 +2,12 @@ version: '3.8'
 
 services:
   mcp-client:
-    image: mcp-client:latest
+    image: ghcr.io/addanuj/mcp-client:latest
     container_name: mcp-client
     ports:
-      - "8080:8000"
+      - "8000:8000"
     volumes:
-      - ~/.mcp-client:/root/.mcp-client
+      - mcp-client-data:/root/.mcp-client
     environment:
       - CONFIG_DIR=/root/.mcp-client
     depends_on:
@@ -23,6 +23,10 @@ services:
       - QRADAR_API_TOKEN=${QRADAR_API_TOKEN}
     networks:
       - mcp-network
+
+volumes:
+  mcp-client-data:
+    driver: local
 
 networks:
   mcp-network:
