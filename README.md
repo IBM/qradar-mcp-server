@@ -43,8 +43,6 @@ Try the full experience with our React + FastAPI client:
 
 **Live Demo:** [http://9.30.147.112:8000](http://9.30.147.112:8000) 🚀
 
-**Container Registry:** `ghcr.io/addanuj/ibm-mcp-client:latest`
-
 > Try: *"Show me top 10 offenses"*, *"How many assets?"*, *"Get QRadar version"*, *"List 5 rules"*
 
 ---
@@ -87,7 +85,9 @@ graph TB
     style E fill:#fce4ec
 ```
 
-## 📦 What's Inside
+---
+
+##  What's Inside
 
 ### 4 Intelligent Tools
 | Tool | Description | Example |
