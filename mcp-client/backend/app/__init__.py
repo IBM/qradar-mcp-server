@@ -1,1 +1,0 @@
-"""IBM MCP Client Backend."""
