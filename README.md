@@ -264,27 +264,6 @@ curl -X POST http://localhost:8001/tools/call \
   }'
 ```
 
-## 📁 Project Structure
-
-```
-QRadar-MCP-Server/
-├── container/
-│   └── Dockerfile              # Multi-arch container definition
-├── src/
-│   ├── __init__.py
-│   ├── __main__.py            # Entry point
-│   ├── server.py              # FastAPI server (HTTP mode)
-│   ├── client.py              # QRadar API client wrapper
-│   └── tools.py               # 4 MCP tools with 728 endpoint definitions
-└── pyproject.toml             # Python package config
-```
-
-## 🚦 Supported QRadar Versions
-
-- QRadar 7.3.x ✅ (tested)
-- QRadar 7.4.x ✅ (tested)
-- QRadar 7.5.x ✅ (tested)
-
 ## 📞 Support
 
 ### Reporting Issues & Feature Requests
@@ -301,7 +280,7 @@ QRadar-MCP-Server/
 **Need help?**
 - Check logs: `docker logs qradar-mcp-server`
 - Search existing issues: https://github.ibm.com/ashrivastava/QRadar-MCP-Server/issues
-- Contact: ashrivastava@ibm.com
+- Contact: ashrivastava@in.ibm.com or rahul.k.p@ibm.com
 
 ---
 
@@ -311,6 +290,4 @@ QRadar-MCP-Server/
 
 - **NOT for production use**
 - **No warranty or support guarantees**
-- **Use at your own risk**
-- For production deployments, conduct thorough security review and testing
-- IBM is not responsible for any issues arising from the use of this software
+
