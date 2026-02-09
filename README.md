@@ -2,6 +2,8 @@
 
 **Model Context Protocol (MCP) server for IBM QRadar SIEM** - Access 728+ QRadar REST API endpoints through just 4 intelligent MCP tools.
 
+![QRadar MCP Server: Radical Efficiency for AI-Powered Security](qradar-mcp-efficiency.png)
+
 ---
 
 ## 🎯 What is This?
