@@ -55,13 +55,13 @@ async def main_http(host: str = "0.0.0.0", port: int = 8001):
     """Run server in HTTP/SSE mode (for containers, web clients)."""
     from mcp.server.sse import SseServerTransport
     from starlette.applications import Starlette
-    from starlette.routing import Route
+    from starlette.routing import Route, Mount
     from starlette.responses import JSONResponse
     import uvicorn
     
     logger.info(f"QRadar MCP Server [HTTP] - 4 tools, 728 endpoints on {host}:{port}")
     
-    sse = SseServerTransport("/messages")
+    sse = SseServerTransport("/messages/")
     
     async def handle_sse(request):
         async with sse.connect_sse(request.scope, request.receive, request._send) as streams:
@@ -110,7 +110,7 @@ async def main_http(host: str = "0.0.0.0", port: int = 8001):
     app = Starlette(
         routes=[
             Route("/sse", endpoint=handle_sse),
-            Route("/messages", endpoint=handle_messages, methods=["POST"]),
+            Mount("/messages/", app=sse.handle_post_message),
             Route("/health", endpoint=health),
             Route("/tools", endpoint=list_tools_api),
             Route("/tools/call", endpoint=call_tool_api, methods=["POST"]),
