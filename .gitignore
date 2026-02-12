@@ -1,0 +1,68 @@
+# Environment and secrets
+.env
+.env.*
+*.key
+*.pem
+secrets/
+credentials/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Container
+.dockerignore
+docker-compose.override.yml
+
+# Build artifacts
+*.tar
+*.tar.gz
+*.zip
+
+# Node (if any)
+node_modules/
+npm-debug.log
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Internal migration docs (do not push to public repo)
+docs/IBM-MIGRATION-PLAN.md
+docs/QUICK-MIGRATION-CHECKLIST.md
+docs/IBM-ORG-REPO-GUIDE.md

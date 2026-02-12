@@ -1,7 +1,7 @@
 # QRadar MCP Server - Dual Mode Container (stdio + HTTP)
 FROM python:3.12-alpine
 
-LABEL org.opencontainers.image.source=https://github.com/addanuj/qradar-mcp-server
+LABEL org.opencontainers.image.source=https://github.com/IBM/qradar-mcp-server
 LABEL org.opencontainers.image.description="QRadar MCP Server - supports stdio and HTTP/SSE modes"
 
 WORKDIR /app

@@ -38,15 +38,6 @@ Instead of exposing 728 tools, we expose **just 4 intelligent tools**:
 
 ---
 
-## 🌐 Experience It Live
-
-### IBM MCP Client (Web UI)
-Try the full experience with our React + FastAPI client:
-
-**Live Demo:** [http://9.30.147.112:8000](http://9.30.147.112:8000) 🚀
-
-> Try: *"Show me top 10 offenses"*, *"How many assets?"*, *"Get QRadar version"*, *"List 5 rules"*
-
 ---
 
 ## 🏗️ Architecture
@@ -114,11 +105,11 @@ graph TB
 
 **No build required!** Pull our pre-built multi-architecture image and run instantly.
 
-**Public Container Registry:** `ghcr.io/addanuj/qradar-mcp-server:latest`
+**Public Container Registry:** `ghcr.io/ibm/qradar-mcp-server:latest`
 
 **Step 1:** Pull the image
 ```bash
-docker pull ghcr.io/addanuj/qradar-mcp-server:latest
+docker pull ghcr.io/ibm/qradar-mcp-server:latest
 ```
 
 **Step 2:** Prepare your QRadar credentials
@@ -133,7 +124,7 @@ docker run -d \
   -e QRADAR_HOST="https://your-qradar-console.com" \
   -e QRADAR_API_TOKEN="your-sec-token-here" \
   -e QRADAR_VERIFY_SSL="false" \
-  ghcr.io/addanuj/qradar-mcp-server:latest \
+  ghcr.io/ibm/qradar-mcp-server:latest \
   --host 0.0.0.0 --port 8001
 ```
 
@@ -153,7 +144,7 @@ curl http://localhost:8001/health
 
 **Image Details:**
 - Registry: GitHub Container Registry (ghcr.io)
-- Image: `ghcr.io/addanuj/qradar-mcp-server:latest`
+- Image: `ghcr.io/ibm/qradar-mcp-server:latest`
 - Public Access: No authentication needed
 - Auto-updated: New commits trigger automatic builds
 
@@ -161,8 +152,8 @@ curl http://localhost:8001/health
 
 ```bash
 # Clone repository
-git clone https://github.ibm.com/ashrivastava/QRadar-MCP-Server.git
-cd QRadar-MCP-Server
+git clone https://github.com/IBM/qradar-mcp-server.git
+cd qradar-mcp-server
 
 # Build container image
 docker build -t qradar-mcp-server:latest -f container/Dockerfile .
@@ -266,12 +257,20 @@ curl -X POST http://localhost:8001/tools/call \
   }'
 ```
 
+---
+
+## IBM Public Repository Disclosure
+
+All content in this repository including code has been provided by IBM under the associated open source software license and IBM is under no obligation to provide enhancements, updates, or support. IBM developers produced this code as an open source project (not as an IBM product), and IBM makes no assertions as to the level of quality nor security, and will not be maintaining this code going forward.
+
+---
+
 ## 📞 Support
 
 ### Reporting Issues & Feature Requests
 
 **Found a bug?**
-1. Go to: https://github.ibm.com/ashrivastava/QRadar-MCP-Server/issues
+1. Go to: https://github.com/IBM/qradar-mcp-server/issues
 2. Click **"New Issue"**
 3. Provide: clear title, steps to reproduce, QRadar version, and logs (`docker logs qradar-mcp-server`)
 
@@ -281,8 +280,7 @@ curl -X POST http://localhost:8001/tools/call \
 
 **Need help?**
 - Check logs: `docker logs qradar-mcp-server`
-- Search existing issues: https://github.ibm.com/ashrivastava/QRadar-MCP-Server/issues
-- Contact: ashrivastava@in.ibm.com or rahul.k.p@ibm.com
+- Search existing issues: https://github.com/IBM/qradar-mcp-server/issues
 
 ---
 
