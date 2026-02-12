@@ -24,7 +24,7 @@ Works with any MCP-compatible client: Claude Desktop, custom AI agents, or direc
 
 ### Prerequisites
 
-- **Docker** installed ([Get Docker](https://docs.docker.com/get-docker/))
+- **Docker** or **Podman** installed
 - **QRadar Console** with API access enabled
 - **QRadar API Token** — get it from: QRadar Console → Admin → Authorized Services → Add
 
@@ -210,14 +210,23 @@ All content in this repository including code has been provided by IBM under the
 
 ## Support
 
-**Found a bug or have a feature request?**
-Open an issue at [github.com/IBM/qradar-mcp-server/issues](https://github.com/IBM/qradar-mcp-server/issues).
+**Found a bug?**
+- Open an issue at [github.com/IBM/qradar-mcp-server/issues](https://github.com/IBM/qradar-mcp-server/issues)
+- Provide: steps to reproduce, environment details, and relevant logs
+- Include log snippets: `docker logs qradar-mcp`
+
+**Feature request?**
+- Open an issue with `[Feature Request]` prefix
+- Describe the use case and expected behavior
 
 **Need help?**
-Check container logs: `docker logs qradar-mcp`
+- Check container logs: `docker logs qradar-mcp`
 
 ---
 
 ## Disclaimer
 
-This is a Minimum Viable Product (MVP) for testing and demonstration purposes only. Not for production use. No warranty or support guarantees.
+This is a Minimum Viable Product (MVP) for testing and demonstration purposes only.
+
+- **NOT for production use**
+- **No warranty or support guarantees**
