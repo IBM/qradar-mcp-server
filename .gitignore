@@ -61,8 +61,3 @@ npm-debug.log
 .pytest_cache/
 .coverage
 htmlcov/
-
-# Internal migration docs (do not push to public repo)
-docs/IBM-MIGRATION-PLAN.md
-docs/QUICK-MIGRATION-CHECKLIST.md
-docs/IBM-ORG-REPO-GUIDE.md
