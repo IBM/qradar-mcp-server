@@ -12,10 +12,13 @@ from typing import Any
 from mcp.types import Tool
 
 from .client import QRadarClient
-
-
-# Cache for endpoint validation
-_endpoint_cache: dict[str, dict] = {}
+from .discovery import (
+    categorize_endpoint,
+    parse_parameters,
+    format_endpoint,
+    paths_match,
+    _endpoint_cache,
+)
 
 
 TOOLS: list[Tool] = [
@@ -215,92 +218,8 @@ async def _do_discover(client: QRadarClient, args: dict) -> dict[str, Any]:
             "message": f"NO ENDPOINTS FOUND for search='{search}' method='{method}'. Try different search terms."
         }
     
-    # Format with detailed schema
-    formatted = []
-    for ep in endpoints:
-        # Categorize the endpoint
-        path = ep.get("path", "")
-        http_method = ep.get("http_method", "")
-        has_path_param = "{" in path
-        
-        if http_method == "POST" and not has_path_param:
-            operation = "CREATE"
-        elif http_method == "POST" and has_path_param:
-            operation = "UPDATE/ACTION"
-        elif http_method == "GET" and has_path_param:
-            operation = "GET_ONE"
-        elif http_method == "GET":
-            operation = "LIST"
-        elif http_method == "DELETE":
-            operation = "DELETE"
-        elif http_method in ["PUT", "PATCH"]:
-            operation = "UPDATE"
-        else:
-            operation = http_method
-        
-        # Parse parameters
-        query_params = []
-        path_params = []
-        body_params = []
-        header_params = []
-        
-        for p in ep.get("parameters", []):
-            param_info = {
-                "name": p.get("parameter_name"),
-                "required": p.get("required", False),
-                "description": (p.get("description") or "")[:150],
-            }
-            
-            ptype = p.get("type", "")
-            if ptype == "QUERY":
-                query_params.append(param_info)
-            elif ptype == "PATH":
-                path_params.append(param_info)
-            elif ptype == "BODY":
-                # Get body schema from mime_types
-                mime_types = p.get("mime_types", [])
-                if mime_types:
-                    sample = mime_types[0].get("sample", "")
-                    param_info["sample"] = sample[:500] if sample else None
-                body_params.append(param_info)
-            elif ptype == "HEADER":
-                header_params.append(param_info)
-        
-        endpoint_info = {
-            "method": http_method,
-            "path": path,
-            "operation": operation,
-            "summary": ep.get("summary", ""),
-            "deprecated": ep.get("deprecated", False),
-        }
-        
-        # Only include non-empty param lists
-        if query_params:
-            endpoint_info["query_params"] = query_params
-        if path_params:
-            endpoint_info["path_params"] = path_params
-        if body_params:
-            endpoint_info["body_params"] = body_params
-        if header_params:
-            endpoint_info["header_params"] = header_params
-        
-        # Build usage example
-        required_query = [p["name"] for p in query_params if p["required"]]
-        required_body = len(body_params) > 0 and body_params[0].get("required", False)
-        
-        usage = f'method="{http_method}", endpoint="{path}"'
-        if required_query:
-            usage += f', params={{"{required_query[0]}": "..."}}'
-        if required_body:
-            usage += ', body={...}'
-        
-        endpoint_info["usage_example"] = usage
-        
-        formatted.append(endpoint_info)
-        
-        # Cache for validation
-        cache_key = f"{http_method}:{path}"
-        _endpoint_cache[cache_key] = endpoint_info
+    # Format with detailed schema using discovery module
+    formatted = [format_endpoint(ep) for ep in endpoints]
     
     return {
         "success": True,
@@ -377,16 +296,12 @@ async def _validate_endpoint(client: QRadarClient, method: str, endpoint: str) -
             "body_sample": body_params[0].get("mime_types", [{}])[0].get("sample") if body_params else None
         }
     
-    # For endpoints with path params, we need to find matching patterns
-    # e.g., /siem/offenses/1/notes should match /siem/offenses/{offense_id}/notes
-    
-    # Build multiple search patterns to find potential matches
-    # Take first 2-3 parts of the path as base
+    # For endpoints with path params, find matching patterns
     search_bases = []
     if len(parts) >= 3:
-        search_bases.append("/".join(parts[:3]))  # e.g., /siem/offenses
+        search_bases.append("/".join(parts[:3]))
     if len(parts) >= 2:
-        search_bases.append("/".join(parts[:2]))  # e.g., /siem
+        search_bases.append("/".join(parts[:2]))
     
     for base in search_bases:
         result = await client.request(
@@ -397,10 +312,9 @@ async def _validate_endpoint(client: QRadarClient, method: str, endpoint: str) -
         )
         
         if result.get("success") and result.get("data"):
-            # Check if any returned path matches our actual path
             for ep in result["data"]:
                 ep_path = ep.get("path", "")
-                if _paths_match(ep_path, endpoint):
+                if paths_match(ep_path, endpoint):
                     body_params = [p for p in ep.get("parameters", []) if p.get("type") == "BODY"]
                     return {
                         "valid": True,
@@ -409,8 +323,7 @@ async def _validate_endpoint(client: QRadarClient, method: str, endpoint: str) -
                         "body_sample": body_params[0].get("mime_types", [{}])[0].get("sample") if body_params else None
                     }
     
-    # No matches found - try to find similar endpoints for suggestions
-    base_path = "/".join(parts[:-1]) if len(parts) > 1 else endpoint
+    # No matches found - suggest similar endpoints
     result = await client.request(
         method="GET",
         endpoint="/help/endpoints",
@@ -427,27 +340,8 @@ async def _validate_endpoint(client: QRadarClient, method: str, endpoint: str) -
             "similar": similar
         }
     
+    base_path = "/".join(parts[:-1]) if len(parts) > 1 else endpoint
     return {
         "valid": False,
         "suggestion": f"No {method} endpoints found matching '{base_path}'. Use qradar_discover to find valid endpoints."
     }
-
-
-def _paths_match(pattern: str, actual: str) -> bool:
-    """
-    Check if actual path matches a pattern with {param} placeholders.
-    e.g., /users/{id} matches /users/123
-    """
-    pattern_parts = pattern.rstrip("/").split("/")
-    actual_parts = actual.rstrip("/").split("/")
-    
-    if len(pattern_parts) != len(actual_parts):
-        return False
-    
-    for p, a in zip(pattern_parts, actual_parts):
-        if p.startswith("{") and p.endswith("}"):
-            continue  # Path parameter, any value matches
-        if p != a:
-            return False
-    
-    return True

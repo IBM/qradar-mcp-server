@@ -8,7 +8,7 @@ version = "2.0.0"
 description = "QRadar MCP Server - 501 endpoints with 2 tools (GET + DELETE)"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = {text = "Apache-2.0"}
 authors = [
     {name = "Anuj Shrivastava", email = "ashrivastava@ibm.com"}
 ]

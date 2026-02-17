@@ -215,12 +215,9 @@ All content in this repository including code has been provided by IBM under the
 - Provide: steps to reproduce, environment details, and relevant logs
 - Include log snippets: `docker logs qradar-mcp`
 
-**Feature request?**
-- Open an issue with `[Feature Request]` prefix
-- Describe the use case and expected behavior
-
 **Need help?**
 - Check container logs: `docker logs qradar-mcp`
+- Contact: [ashrivastava@in.ibm.com](mailto:ashrivastava@in.ibm.com), [rahul.k.p@ibm.com](mailto:rahul.k.p@ibm.com)
 
 ---
 

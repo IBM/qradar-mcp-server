@@ -2,13 +2,15 @@
 QRadar REST API Client
 
 Async HTTP client for QRadar API supporting all HTTP methods.
+Uses config.py for configuration and auth.py for authentication.
 """
 
-import os
-import sys
 import logging
 from typing import Any, Optional
 import httpx
+
+from .config import QRadarConfig
+from .auth import QRadarAuth
 
 logger = logging.getLogger("qradar-mcp")
 
@@ -24,42 +26,25 @@ class QRadarClient:
         verify_ssl: Optional[bool] = None,
         timeout: float = 120.0,
     ):
-        # Priority: Constructor args > Environment variables
-        self.host = (host or os.environ.get("QRADAR_HOST", "")).rstrip("/")
-        self.api_token = api_token or os.environ.get("QRADAR_API_TOKEN", "")
-        self.api_version = api_version
-        
-        # SSL verification: Check env var, default to False for self-signed certs
-        if verify_ssl is None:
-            ssl_env = os.environ.get("QRADAR_VERIFY_SSL", "false").lower()
-            self.verify_ssl = ssl_env in ("true", "1", "yes")
-        else:
-            self.verify_ssl = verify_ssl
-            
-        self.timeout = timeout
+        self.config = QRadarConfig(
+            host=host,
+            api_token=api_token,
+            api_version=api_version,
+            verify_ssl=verify_ssl,
+            timeout=timeout,
+        )
+        self.auth = QRadarAuth(
+            api_token=self.config.api_token,
+            api_version=self.config.api_version,
+        )
 
-        # Validate required credentials
-        # Don't exit - just warn. Credentials can be passed in tool arguments.
-        if not self.host:
-            logger.warning("No QRADAR_HOST provided - must be passed in tool arguments")
-            
-        if not self.api_token:
-            logger.warning("No QRADAR_API_TOKEN provided - must be passed in tool arguments")
-        
-        # Log configuration at startup
-        if self.host and self.api_token:
-            logger.info(f"QRadar MCP Client initialized")
-            logger.info(f"  Host: {self.host}")
-            logger.info(f"  SSL Verification: {self.verify_ssl}")
-            logger.info(f"  API Version: {self.api_version}")
-
-        self.base_url = f"{self.host}/api" if self.host else ""
-        self.headers = {
-            "SEC": self.api_token,
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "Version": self.api_version,
-        }
+        # Expose for backward compatibility
+        self.host = self.config.host
+        self.api_token = self.config.api_token
+        self.verify_ssl = self.config.verify_ssl
+        self.timeout = self.config.timeout
+        self.base_url = self.config.base_url
+        self.headers = self.config.headers
 
     async def request(
         self,

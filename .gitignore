@@ -1,10 +1,13 @@
 # Environment and secrets
 .env
-.env.*
+.env.local
+.env.production
 *.key
 *.pem
 secrets/
 credentials/
+# Allow .env.example (placeholder-only template)
+!.env.example
 
 # Python
 __pycache__/
@@ -61,3 +64,9 @@ npm-debug.log
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Local docs and configs (not for GitHub)
+IBM-BOT-ISSUE-TEMPLATE.md
+
+# Copilot instructions (symlink, not for GitHub)
+copilot-instructions.md
