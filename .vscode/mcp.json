@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "qradar-mcp-server": {
+      "type": "sse",
+      "url": "http://9.30.147.112:8001/sse"
+    }
+  }
+}
