@@ -174,26 +174,80 @@ docker run -d --name qradar-mcp -p 8001:8001 \
 
 ## Architecture
 
+### How It Works
+
 ```mermaid
-graph TB
-    subgraph "Client Layer"
-        A[MCP Client / LLM]
+flowchart TB
+    subgraph CLIENT["MCP Client (LLM / Claude Desktop / Agent)"]
+        U([User Prompt])
     end
 
-    subgraph "QRadar MCP Server Container"
-        B[Python Server — Port 8001]
-        C[4 MCP Tools]
-        D[QRadar API Wrapper — 728 Endpoints]
+    subgraph MCP["QRadar MCP Server"]
+        direction TB
+        T{Router}
+
+        subgraph TOOLS["4 MCP Tools"]
+            direction LR
+            T1["qradar_discover\n─────────────\nSearch 728 endpoints\nby keyword/method\nvia /help/endpoints"]
+            T2["qradar_get\n─────────────\nGET any endpoint\nFilter, paginate,\nselect fields"]
+            T3["qradar_execute\n─────────────\nPOST / PUT / PATCH\nValidates endpoint\nbefore calling"]
+            T4["qradar_delete\n─────────────\nDELETE resources\nReference data,\nsaved searches"]
+        end
+
+        subgraph AUTH["Token Handling"]
+            direction LR
+            ENV["Environment Variable\nQRADAR_API_TOKEN\n(set at startup)"]
+            ARG["Per-Request Override\nqradar_host / qradar_token\n(passed in tool args)"]
+            HDR["SEC Header\nSent with every\nAPI request"]
+        end
+
+        ENV -->|default| HDR
+        ARG -->|overrides| HDR
     end
 
-    subgraph "IBM QRadar SIEM"
-        E[REST API v26.0+]
+    subgraph QRADAR["IBM QRadar SIEM"]
+        API["REST API v26.0+\n728 Endpoints"]
+        subgraph CATEGORIES["API Categories"]
+            direction LR
+            C1["SIEM\nOffenses\nSources"]
+            C2["Ariel\nAQL Queries\nSearches"]
+            C3["Assets\nVulnerabilities\nNetwork"]
+            C4["Reference Data\nSets · Maps\nCollections"]
+            C5["Config\nLog Sources\nUsers · Rules"]
+            C6["System\nHealth\nLicensing"]
+        end
     end
 
-    A -->|HTTP/SSE or stdio| B
-    B --> C
-    C --> D
-    D -->|HTTPS| E
+    U -->|"HTTP/SSE or stdio"| T
+    T --> T1 & T2 & T3 & T4
+    T1 & T2 & T3 & T4 -->|"HTTPS + SEC token"| API
+    API --- CATEGORIES
+```
+
+### Tool Workflow
+
+```mermaid
+sequenceDiagram
+    actor User as User / LLM
+    participant MCP as MCP Server
+    participant QR as QRadar API
+
+    User->>MCP: qradar_discover(search="offenses")
+    MCP->>QR: GET /help/endpoints?filter=path ILIKE '%offenses%'
+    QR-->>MCP: Matching endpoints with schemas
+    MCP-->>User: Exact paths, parameters, body samples
+
+    User->>MCP: qradar_get(endpoint="/siem/offenses", filter="status=OPEN")
+    MCP->>QR: GET /siem/offenses?filter=status=OPEN [SEC token]
+    QR-->>MCP: Offense data
+    MCP-->>User: JSON results
+
+    User->>MCP: qradar_execute(method="POST", endpoint="/ariel/searches", params={...})
+    MCP->>QR: Validate endpoint via /help/endpoints
+    QR-->>MCP: Endpoint exists ✓
+    MCP->>QR: POST /ariel/searches [SEC token]
+    QR-->>MCP: Search created
+    MCP-->>User: Search ID + status
 ```
 
 ### Supported QRadar API Categories (728 endpoints)
@@ -223,7 +277,4 @@ All content in this repository including code has been provided by IBM under the
 
 ## Disclaimer
 
-This is a Minimum Viable Product (MVP) for testing and demonstration purposes only.
-
-- **NOT for production use**
-- **No warranty or support guarantees**
+All content in this repository including code has been provided by IBM under the associated open source software license and IBM is under no obligation to provide enhancements, updates, or support. IBM developers produced this code as an open source project (not as an IBM product), and IBM makes no assertions as to the level of quality nor security, and will not be maintaining this code going forward.

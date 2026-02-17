@@ -5,12 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "qradar-mcp-server"
 version = "2.0.0"
-description = "QRadar MCP Server - 501 endpoints with 2 tools (GET + DELETE)"
+description = "QRadar MCP Server - 728+ QRadar REST API endpoints through 4 intelligent MCP tools"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
 authors = [
-    {name = "Anuj Shrivastava", email = "ashrivastava@ibm.com"}
+    {name = "Anuj Shrivastava", email = "ashrivastava@in.ibm.com"}
 ]
 
 dependencies = [

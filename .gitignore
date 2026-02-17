@@ -67,6 +67,3 @@ htmlcov/
 
 # Local docs and configs (not for GitHub)
 IBM-BOT-ISSUE-TEMPLATE.md
-
-# Copilot instructions (symlink, not for GitHub)
-copilot-instructions.md
