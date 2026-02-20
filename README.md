@@ -49,6 +49,7 @@ docker run -d \
 ```
 
 Replace:
+
 - `your-qradar-console.com` with your QRadar console hostname
 - `your-api-token` with your QRadar authorized service token
 
@@ -59,6 +60,7 @@ curl http://localhost:8001/health
 ```
 
 Expected response:
+
 ```json
 {"status": "healthy", "mode": "http", "tools": 4, "endpoints": 728}
 ```
@@ -81,6 +83,7 @@ That's it — the MCP server is running and ready to use.
 ### HTTP API Examples
 
 **Discover endpoints:**
+
 ```bash
 curl -X POST http://localhost:8001/tools/call \
   -H "Content-Type: application/json" \
@@ -91,6 +94,7 @@ curl -X POST http://localhost:8001/tools/call \
 ```
 
 **Get recent offenses:**
+
 ```bash
 curl -X POST http://localhost:8001/tools/call \
   -H "Content-Type: application/json" \
@@ -101,6 +105,7 @@ curl -X POST http://localhost:8001/tools/call \
 ```
 
 **List all tools:**
+
 ```bash
 curl http://localhost:8001/tools
 ```
@@ -128,6 +133,7 @@ Add to your Claude Desktop MCP config (`~/Library/Application Support/Claude/cla
 ```
 
 Then ask Claude things like:
+
 - *"Show me the top 10 open offenses"*
 - *"What assets are in my network?"*
 - *"Search for failed login events in the last hour"*
@@ -144,6 +150,7 @@ Then ask Claude things like:
 | `QRADAR_API_TOKEN` | Yes | — | QRadar authorized service token |
 | `QRADAR_VERIFY_SSL` | No | `false` | Verify SSL certificates |
 | `QRADAR_API_VERSION` | No | `26.0` | QRadar API version |
+| `MCP_API_KEY` | No | — | API key for HTTP mode (clients must send `Authorization: Bearer <key>`) |
 
 ### Runtime Modes
 
@@ -188,17 +195,17 @@ flowchart TB
 
         subgraph TOOLS["4 MCP Tools"]
             direction LR
-            T1["qradar_discover\n─────────────\nSearch 728 endpoints\nby keyword/method\nvia /help/endpoints"]
-            T2["qradar_get\n─────────────\nGET any endpoint\nFilter, paginate,\nselect fields"]
-            T3["qradar_execute\n─────────────\nPOST / PUT / PATCH\nValidates endpoint\nbefore calling"]
-            T4["qradar_delete\n─────────────\nDELETE resources\nReference data,\nsaved searches"]
+            T1["qradar_discover"]
+            T2["qradar_get"]
+            T3["qradar_execute"]
+            T4["qradar_delete"]
         end
 
         subgraph AUTH["Token Handling"]
             direction LR
-            ENV["Environment Variable\nQRADAR_API_TOKEN\n(set at startup)"]
-            ARG["Per-Request Override\nqradar_host / qradar_token\n(passed in tool args)"]
-            HDR["SEC Header\nSent with every\nAPI request"]
+            ENV["QRADAR_API_TOKEN env var"]
+            ARG["Per-request override"]
+            HDR["SEC Header"]
         end
 
         ENV -->|default| HDR
@@ -206,15 +213,15 @@ flowchart TB
     end
 
     subgraph QRADAR["IBM QRadar SIEM"]
-        API["REST API v26.0+\n728 Endpoints"]
+        API["REST API v26.0+ · 728 Endpoints"]
         subgraph CATEGORIES["API Categories"]
             direction LR
-            C1["SIEM\nOffenses\nSources"]
-            C2["Ariel\nAQL Queries\nSearches"]
-            C3["Assets\nVulnerabilities\nNetwork"]
-            C4["Reference Data\nSets · Maps\nCollections"]
-            C5["Config\nLog Sources\nUsers · Rules"]
-            C6["System\nHealth\nLicensing"]
+            C1["SIEM"]
+            C2["Ariel"]
+            C3["Assets"]
+            C4["Reference Data"]
+            C5["Config"]
+            C6["System"]
         end
     end
 
@@ -259,11 +266,13 @@ SIEM (offenses, sources, destinations) · Assets (model, vulnerabilities) · Ana
 ## Support
 
 **Found a bug?**
+
 - Open an issue at [github.com/IBM/qradar-mcp-server/issues](https://github.com/IBM/qradar-mcp-server/issues)
 - Provide: steps to reproduce, environment details, and relevant logs
 - Include log snippets: `docker logs qradar-mcp`
 
 **Need help?**
+
 - Check container logs: `docker logs qradar-mcp`
 - Contact: [ashrivastava@in.ibm.com](mailto:ashrivastava@in.ibm.com), [rahul.k.p@ibm.com](mailto:rahul.k.p@ibm.com)
 

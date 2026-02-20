@@ -1,0 +1,1 @@
+../../memory-bank/copilot-instructions.md

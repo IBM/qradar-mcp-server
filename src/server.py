@@ -5,6 +5,7 @@ QRadar MCP Server
 Supports both stdio (for Claude Desktop) and HTTP/SSE (for containers/web).
 """
 
+import os
 import logging
 import asyncio
 import argparse
@@ -18,6 +19,9 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger("qradar-mcp")
 
 server = Server("qradar-mcp-server")
+
+# API key for HTTP mode (Layer 1 security)
+MCP_API_KEY = os.environ.get("MCP_API_KEY", "")
 
 
 @server.list_tools()
@@ -51,17 +55,43 @@ async def main_stdio():
         await server.run(read_stream, write_stream, server.create_initialization_options())
 
 
+def _check_api_key(request) -> bool:
+    """Validate API key from Authorization header. Returns True if valid."""
+    if not MCP_API_KEY:
+        return True  # No API key configured — allow all requests
+    auth_header = request.headers.get("authorization", "")
+    if auth_header.startswith("Bearer "):
+        return auth_header[7:] == MCP_API_KEY
+    return False
+
+
 async def main_http(host: str = "0.0.0.0", port: int = 8001):
     """Run server in HTTP/SSE mode (for containers, web clients)."""
     from mcp.server.sse import SseServerTransport
     from starlette.applications import Starlette
     from starlette.routing import Route, Mount
     from starlette.responses import JSONResponse
+    from starlette.middleware import Middleware
+    from starlette.middleware.base import BaseHTTPMiddleware
     import uvicorn
-    
+
+    auth_required = bool(MCP_API_KEY)
     logger.info(f"QRadar MCP Server [HTTP] - 4 tools, 728 endpoints on {host}:{port}")
+    logger.info(f"  API key authentication: {'ENABLED' if auth_required else 'DISABLED (set MCP_API_KEY to enable)'}")
     
     sse = SseServerTransport("/messages/")
+
+    # API key middleware — protects all endpoints except /health
+    class ApiKeyMiddleware(BaseHTTPMiddleware):
+        async def dispatch(self, request, call_next):
+            if request.url.path == "/health":
+                return await call_next(request)
+            if not _check_api_key(request):
+                return JSONResponse(
+                    {"error": "Unauthorized. Provide Authorization: Bearer <MCP_API_KEY> header."},
+                    status_code=401,
+                )
+            return await call_next(request)
     
     async def handle_sse(request):
         async with sse.connect_sse(request.scope, request.receive, request._send) as streams:
@@ -71,7 +101,7 @@ async def main_http(host: str = "0.0.0.0", port: int = 8001):
         await sse.handle_post_message(request.scope, request.receive, request._send)
     
     async def health(request):
-        return JSONResponse({"status": "healthy", "mode": "http", "tools": 4, "endpoints": 728})
+        return JSONResponse({"status": "healthy", "mode": "http", "tools": 4, "endpoints": 728, "auth_required": auth_required})
     
     # Direct REST API endpoints (simpler than SSE for container-to-container)
     async def list_tools_api(request):
@@ -106,7 +136,9 @@ async def main_http(host: str = "0.0.0.0", port: int = 8001):
             return JSONResponse({"error": "QRadar credentials not provided. Pass qradar_host and qradar_token in arguments."}, status_code=400)
         except Exception as e:
             return JSONResponse({"error": str(e)}, status_code=500)
-    
+
+    middleware = [Middleware(ApiKeyMiddleware)] if auth_required else []
+
     app = Starlette(
         routes=[
             Route("/sse", endpoint=handle_sse),
@@ -114,7 +146,8 @@ async def main_http(host: str = "0.0.0.0", port: int = 8001):
             Route("/health", endpoint=health),
             Route("/tools", endpoint=list_tools_api),
             Route("/tools/call", endpoint=call_tool_api, methods=["POST"]),
-        ]
+        ],
+        middleware=middleware,
     )
     
     config = uvicorn.Config(app, host=host, port=port, log_level="info")
