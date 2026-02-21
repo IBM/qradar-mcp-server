@@ -97,8 +97,7 @@ Expected response:
   "mode": "http",
   "tools": 4,
   "endpoints": 728,
-  "auth_required": true,
-  "oauth_enabled": false
+  "auth_required": true
 }
 ```
 

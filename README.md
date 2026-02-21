@@ -66,8 +66,6 @@ docker run -d \
   -e QRADAR_API_TOKEN="your-api-token" \
   -e QRADAR_VERIFY_SSL="false" \
   -e MCP_API_KEY="$(openssl rand -base64 32)" \
-  -e OAUTH_JWT_SECRET="$(openssl rand -base64 32)" \
-  -e OAUTH_PASSWORD="your-oauth-password" \
   ghcr.io/ibm/qradar-mcp-server:latest
 ```
 
@@ -85,21 +83,24 @@ curl http://localhost:8001/health
 Expected response:
 
 ```json
-{"status": "healthy", "mode": "http", "tools": 4, "endpoints": 728, "auth_required": true, "oauth_enabled": true}
+{"status": "healthy", "mode": "http", "tools": 4, "endpoints": 728, "auth_required": true}
 ```
 
 That's it — the MCP server is running and ready to use.
 
 ### Quick Start (Client)
 
-Get the server URL and login credentials from your admin. Add to `.vscode/mcp.json` in your project root:
+Get the server URL and API key from your admin. Add to `.vscode/mcp.json` in your project root:
 
 ```json
 {
   "servers": {
     "qradar-mcp-server": {
       "type": "sse",
-      "url": "http://<mcp-server-host>:8001/sse"
+      "url": "http://<mcp-server-host>:8001/sse",
+      "headers": {
+        "Authorization": "Bearer <your-api-key>"
+      }
     }
   }
 }
@@ -191,9 +192,6 @@ Then ask Claude things like:
 | `QRADAR_VERIFY_SSL` | No | `false` | Verify SSL certificates |
 | `QRADAR_API_VERSION` | No | `26.0` | QRadar API version |
 | `MCP_API_KEY` | No | — | API key for HTTP mode (clients must send `Authorization: Bearer <key>`) |
-| `OAUTH_JWT_SECRET` | No | — | Secret for signing JWT tokens. Set to enable OAuth 2.1. Generate: `openssl rand -base64 32` |
-| `OAUTH_USERNAME` | No | `admin` | Username for the OAuth login page |
-| `OAUTH_PASSWORD` | No | — | Password for the OAuth login page. Required if `OAUTH_JWT_SECRET` is set |
 
 ### Runtime Modes
 
@@ -206,31 +204,14 @@ Then ask Claude things like:
 
 ## Security
 
-The MCP server has three layers of authentication:
+The MCP server has two layers of authentication:
 
 | Layer | Purpose | How it works |
 |-------|---------|-------------|
-| **Layer 1 — MCP API Key** | Quick static auth for trusted clients | Client sends `Authorization: Bearer <key>` header. Server validates against `MCP_API_KEY`. |
-| **Layer 2 — OAuth 2.1** | Full MCP spec compliance (RFC 8414, RFC 7591, PKCE) | Dynamic client registration → browser-based login → JWT access tokens with 1h expiry + refresh token rotation. |
-| **Layer 3 — QRadar SEC Token** | Authenticates the MCP server to QRadar's REST API | Server attaches `SEC: <token>` header to every QRadar API call. Set via `QRADAR_API_TOKEN` env var. |
+| **Layer 1 — MCP API Key** | Protects the MCP server itself | Client sends `Authorization: Bearer <key>` header. Server validates against `MCP_API_KEY`. Optional — if not set, the server is open. |
+| **Layer 2 — QRadar SEC Token** | Authenticates the MCP server to QRadar's REST API | Server attaches `SEC: <token>` header to every QRadar API call. Set via `QRADAR_API_TOKEN` env var. |
 
-Layers 1 and 2 are **dual-mode** — the server accepts both static API keys and OAuth JWT tokens. Existing clients using `Authorization: Bearer <api-key>` continue to work unchanged.
-
-### OAuth 2.1 Flow (Layer 2)
-
-```
-Client → GET /sse                                    → 401 + WWW-Authenticate header
-Client → GET /.well-known/oauth-authorization-server → metadata (endpoints, PKCE methods)
-Client → POST /register                             → client_id + client_secret
-Client → opens browser → /authorize?code_challenge=... → login page
-User   → enters username/password
-Client → POST /token (code + code_verifier)           → access_token (JWT, 1h) + refresh_token (7d)
-Client → GET /sse + Bearer <access_token>             → connected ✓
-```
-
-To enable OAuth, set `OAUTH_JWT_SECRET` and `OAUTH_PASSWORD` environment variables. See [Configuration](#configuration).
-
-> **stdio mode** (Claude Desktop local usage) is exempt from Layer 1/2 — the user runs the process locally with their own QRadar token; QRadar (Layer 3) is the security gate.
+> **stdio mode** (Claude Desktop local usage) is exempt from Layer 1 — the user runs the process locally with their own QRadar token; QRadar (Layer 2) is the security gate.
 
 ---
 
