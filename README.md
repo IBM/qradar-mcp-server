@@ -38,7 +38,7 @@ Authentication happens automatically — the server uses your QRadar API token f
 
 ## Getting Started
 
-> 📖 [Full Setup Guide](SETUP_GUIDE.md) — Complete step-by-step instructions for server admins and clients, including deployment, client onboarding for Claude Desktop and IBM Bob, key rotation, and troubleshooting.
+> 📖 [Full Setup Guide](qradar-mcp-server-e2e-setup-guide.md) — Complete step-by-step instructions for server admins and clients, including deployment, client onboarding for Claude Desktop, VS Code, and IBM Bob, key rotation, and troubleshooting.
 
 ### Quick Start (Admin)
 
@@ -92,23 +92,20 @@ That's it — the MCP server is running and ready to use.
 
 ### Quick Start (Client)
 
-Get the server URL and API key from your admin. Add to `.vscode/mcp.json` in your project root:
+Get the server URL and login credentials from your admin. Add to `.vscode/mcp.json` in your project root:
 
 ```json
 {
   "servers": {
     "qradar-mcp-server": {
       "type": "sse",
-      "url": "http://<mcp-server-host>:8001/sse",
-      "headers": {
-        "Authorization": "Bearer <your-api-key>"
-      }
+      "url": "http://<mcp-server-host>:8001/sse"
     }
   }
 }
 ```
 
-Reload VS Code (`Cmd+Shift+P` → **Reload Window**) and start chatting via GitHub Copilot. See the [Setup Guide](SETUP_GUIDE.md) for Claude Desktop and IBM Bob configuration.
+Reload VS Code (`Cmd+Shift+P` → **Reload Window**). See the [Setup Guide](qradar-mcp-server-e2e-setup-guide.md) for Claude Desktop and IBM Bob configuration.
 
 ---
 
@@ -344,7 +341,7 @@ SIEM (offenses, sources, destinations) · Assets (model, vulnerabilities) · Ana
 - [IBM QRadar SIEM Documentation](https://www.ibm.com/docs/en/qsip)
 - [QRadar REST API Reference](https://www.ibm.com/docs/en/qsip/7.5?topic=versions-rest-api-v260-reference)
 - [Container Image on ghcr.io](https://github.com/orgs/IBM/packages/container/package/qradar-mcp-server)
-- [Full Setup Guide](SETUP_GUIDE.md)
+- [Full Setup Guide](qradar-mcp-server-e2e-setup-guide.md)
 
 ---
 
