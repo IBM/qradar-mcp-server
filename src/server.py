@@ -17,6 +17,7 @@ from .client import QRadarClient
 from .tools import TOOLS, execute_tool
 from .oauth import (
     get_metadata,
+    get_protected_resource_metadata,
     register_client,
     authorize_get,
     authorize_post,
@@ -73,14 +74,14 @@ def _check_auth(request) -> bool:
     (b) OAuth JWT access token — Bearer <jwt>
     Returns True if either is valid.
     """
-    if not MCP_API_KEY:
-        return True  # No API key configured — allow all requests
+    if not MCP_API_KEY and not is_oauth_configured():
+        return True  # No auth configured at all — allow all requests
     auth_header = request.headers.get("authorization", "")
     if not auth_header.startswith("Bearer "):
         return False
     token = auth_header[7:]
     # Check static API key first (fast path)
-    if token == MCP_API_KEY:
+    if MCP_API_KEY and token == MCP_API_KEY:
         return True
     # Check OAuth JWT token
     payload = verify_access_token(token)
@@ -99,8 +100,8 @@ async def main_http(host: str = "0.0.0.0", port: int = 8001):
     from starlette.middleware.base import BaseHTTPMiddleware
     import uvicorn
 
-    auth_required = bool(MCP_API_KEY)
     oauth_enabled = is_oauth_configured()
+    auth_required = bool(MCP_API_KEY) or oauth_enabled
     logger.info(f"QRadar MCP Server [HTTP] - 4 tools, 728 endpoints on {host}:{port}")
     logger.info(f"  API key authentication: {'ENABLED' if auth_required else 'DISABLED (set MCP_API_KEY to enable)'}")
     logger.info(f"  OAuth 2.1: {'ENABLED' if oauth_enabled else 'DISABLED (set OAUTH_JWT_SECRET + OAUTH_PASSWORD to enable)'}")
@@ -115,7 +116,7 @@ async def main_http(host: str = "0.0.0.0", port: int = 8001):
 
     # --- Auth middleware (protects /sse, /messages, /tools) ---
     # Public endpoints: /health, /.well-known/*, /register, /authorize, /token
-    _PUBLIC_PATHS = {"/health", "/.well-known/oauth-authorization-server", "/register", "/authorize", "/token"}
+    _PUBLIC_PATHS = {"/health", "/.well-known/oauth-authorization-server", "/.well-known/oauth-protected-resource", "/register", "/authorize", "/token"}
 
     class AuthMiddleware(BaseHTTPMiddleware):
         async def dispatch(self, request, call_next):
@@ -157,6 +158,11 @@ async def main_http(host: str = "0.0.0.0", port: int = 8001):
         """RFC 8414 — Authorization Server Metadata."""
         base = _base_url(request)
         return JSONResponse(get_metadata(base))
+
+    async def oauth_protected_resource(request):
+        """RFC 9728 — Protected Resource Metadata."""
+        base = _base_url(request)
+        return JSONResponse(get_protected_resource_metadata(base))
 
     async def oauth_register(request):
         """RFC 7591 — Dynamic Client Registration."""
@@ -245,6 +251,7 @@ async def main_http(host: str = "0.0.0.0", port: int = 8001):
             Route("/tools/call", endpoint=call_tool_api, methods=["POST"]),
             # OAuth 2.1 routes
             Route("/.well-known/oauth-authorization-server", endpoint=oauth_metadata),
+            Route("/.well-known/oauth-protected-resource", endpoint=oauth_protected_resource),
             Route("/register", endpoint=oauth_register, methods=["POST"]),
             Route("/authorize", endpoint=oauth_authorize, methods=["GET", "POST"]),
             Route("/token", endpoint=oauth_token, methods=["POST"]),

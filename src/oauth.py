@@ -133,6 +133,16 @@ def get_metadata(base_url: str) -> dict:
     }
 
 
+def get_protected_resource_metadata(base_url: str) -> dict:
+    """Return Protected Resource Metadata (RFC 9728)."""
+    return {
+        "resource": base_url,
+        "authorization_servers": [base_url],
+        "bearer_methods_supported": ["header"],
+        "scopes_supported": ["mcp"],
+    }
+
+
 # ---------------------------------------------------------------------------
 # Dynamic client registration — RFC 7591
 # ---------------------------------------------------------------------------
@@ -427,8 +437,8 @@ def _exchange_refresh_token(body: dict) -> tuple[dict, int]:
 # ---------------------------------------------------------------------------
 
 def www_authenticate_header(base_url: str) -> str:
-    """Build the WWW-Authenticate header value per MCP spec."""
-    return f'Bearer resource_metadata="{base_url}/.well-known/oauth-authorization-server"'
+    """Build the WWW-Authenticate header value per MCP spec (RFC 9728)."""
+    return f'Bearer resource_metadata="{base_url}/.well-known/oauth-protected-resource"'
 
 
 # ---------------------------------------------------------------------------
