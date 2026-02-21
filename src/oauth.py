@@ -227,9 +227,22 @@ _LOGIN_HTML = """<!DOCTYPE html>
 </html>"""
 
 
+def _is_valid_redirect_uri(redirect_uri: str) -> bool:
+    """Validate redirect URI for public clients (loopback or https)."""
+    parsed = urlparse(redirect_uri)
+    # Allow loopback addresses (http://127.0.0.1:PORT/ or http://localhost:PORT/)
+    if parsed.scheme == "http" and parsed.hostname in ("127.0.0.1", "localhost", "[::1]"):
+        return True
+    # Allow https redirects (e.g. https://vscode.dev/redirect)
+    if parsed.scheme == "https":
+        return True
+    return False
+
+
 def authorize_get(params: dict) -> tuple[str, int, dict]:
     """
     Handle GET /authorize — show login page.
+    Supports both registered clients and public clients (like VS Code).
     Returns (html_body, status_code, headers).
     """
     client_id = params.get("client_id", "")
@@ -238,13 +251,21 @@ def authorize_get(params: dict) -> tuple[str, int, dict]:
     code_challenge_method = params.get("code_challenge_method", "S256")
     state = params.get("state", "")
 
-    # Validate client
-    if client_id not in _client_registry:
-        return "<h1>Error: Unknown client_id</h1>", 400, {"Content-Type": "text/html"}
+    if not client_id:
+        return "<h1>Error: client_id is required</h1>", 400, {"Content-Type": "text/html"}
 
-    client = _client_registry[client_id]
-    if redirect_uri not in client["redirect_uris"]:
-        return "<h1>Error: Invalid redirect_uri</h1>", 400, {"Content-Type": "text/html"}
+    # Check registered client first, then allow public clients
+    client_name = "unknown"
+    if client_id in _client_registry:
+        client = _client_registry[client_id]
+        if redirect_uri not in client["redirect_uris"]:
+            return "<h1>Error: Invalid redirect_uri</h1>", 400, {"Content-Type": "text/html"}
+        client_name = client.get("client_name", "unknown")
+    else:
+        # Public client — validate redirect_uri (loopback or https only)
+        if not _is_valid_redirect_uri(redirect_uri):
+            return "<h1>Error: Invalid redirect_uri for public client</h1>", 400, {"Content-Type": "text/html"}
+        client_name = "VS Code"
 
     if not code_challenge:
         return "<h1>Error: code_challenge is required (PKCE)</h1>", 400, {"Content-Type": "text/html"}
@@ -255,7 +276,7 @@ def authorize_get(params: dict) -> tuple[str, int, dict]:
         code_challenge=code_challenge,
         code_challenge_method=code_challenge_method,
         state=state,
-        client_name=client.get("client_name", "unknown"),
+        client_name=client_name,
         error="",
     )
     return html, 200, {"Content-Type": "text/html"}
@@ -264,6 +285,7 @@ def authorize_get(params: dict) -> tuple[str, int, dict]:
 def authorize_post(form: dict) -> tuple[str, int, dict]:
     """
     Handle POST /authorize — validate credentials and redirect with auth code.
+    Supports both registered and public clients.
     Returns (body, status_code, headers).
     """
     username = form.get("username", "")
@@ -274,20 +296,22 @@ def authorize_post(form: dict) -> tuple[str, int, dict]:
     code_challenge_method = form.get("code_challenge_method", "S256")
     state = form.get("state", "")
 
-    # Validate client
-    if client_id not in _client_registry:
-        return "<h1>Error: Unknown client_id</h1>", 400, {"Content-Type": "text/html"}
+    # Validate client — registered or public
+    client_name = "VS Code"
+    if client_id in _client_registry:
+        client_name = _client_registry[client_id].get("client_name", "unknown")
+    elif not _is_valid_redirect_uri(redirect_uri):
+        return "<h1>Error: Invalid redirect_uri for public client</h1>", 400, {"Content-Type": "text/html"}
 
     # Validate credentials
     if username != OAUTH_USERNAME or password != OAUTH_PASSWORD:
-        client = _client_registry[client_id]
         html = _LOGIN_HTML.format(
             client_id=client_id,
             redirect_uri=redirect_uri,
             code_challenge=code_challenge,
             code_challenge_method=code_challenge_method,
             state=state,
-            client_name=client.get("client_name", "unknown"),
+            client_name=client_name,
             error='<div class="error">Invalid username or password</div>',
         )
         return html, 401, {"Content-Type": "text/html"}
@@ -342,7 +366,8 @@ def exchange_token(body: dict) -> tuple[dict, int]:
 
 
 def _exchange_auth_code(body: dict) -> tuple[dict, int]:
-    """Exchange authorization code + PKCE verifier for tokens."""
+    """Exchange authorization code + PKCE verifier for tokens.
+    Supports both registered clients (with client_secret) and public clients (PKCE only)."""
     code = body.get("code", "")
     client_id = body.get("client_id", "")
     client_secret = body.get("client_secret", "")
@@ -356,18 +381,22 @@ def _exchange_auth_code(body: dict) -> tuple[dict, int]:
 
     code_data = _auth_codes[code]
 
-    # Validate client
+    # Validate client_id matches the one used during authorize
     if code_data["client_id"] != client_id:
         return {"error": "invalid_grant", "error_description": "client_id mismatch"}, 400
 
-    if client_id not in _client_registry:
-        return {"error": "invalid_client"}, 401
+    # Validate redirect_uri matches (required by OAuth 2.1)
+    if body.get("redirect_uri") and body["redirect_uri"] != code_data["redirect_uri"]:
+        return {"error": "invalid_grant", "error_description": "redirect_uri mismatch"}, 400
 
-    client = _client_registry[client_id]
-    if _hash(client_secret) != client["client_secret"]:
-        return {"error": "invalid_client", "error_description": "Invalid client_secret"}, 401
+    # For registered clients, verify client_secret
+    if client_id in _client_registry:
+        client = _client_registry[client_id]
+        if _hash(client_secret) != client["client_secret"]:
+            return {"error": "invalid_client", "error_description": "Invalid client_secret"}, 401
+    # For public clients, PKCE is the only proof — no client_secret required
 
-    # Validate PKCE
+    # Validate PKCE (required for ALL clients)
     if not _verify_pkce(code_verifier, code_data["code_challenge"], code_data["code_challenge_method"]):
         return {"error": "invalid_grant", "error_description": "PKCE verification failed"}, 400
 
@@ -390,7 +419,8 @@ def _exchange_auth_code(body: dict) -> tuple[dict, int]:
 
 
 def _exchange_refresh_token(body: dict) -> tuple[dict, int]:
-    """Exchange refresh token for new access + refresh tokens."""
+    """Exchange refresh token for new access + refresh tokens.
+    Supports both registered and public clients."""
     refresh_token = body.get("refresh_token", "")
     client_id = body.get("client_id", "")
     client_secret = body.get("client_secret", "")
@@ -403,16 +433,16 @@ def _exchange_refresh_token(body: dict) -> tuple[dict, int]:
 
     token_data = _refresh_tokens[token_hash]
 
-    # Validate client
+    # Validate client_id matches
     if token_data["client_id"] != client_id:
         return {"error": "invalid_grant", "error_description": "client_id mismatch"}, 400
 
-    if client_id not in _client_registry:
-        return {"error": "invalid_client"}, 401
-
-    client = _client_registry[client_id]
-    if _hash(client_secret) != client["client_secret"]:
-        return {"error": "invalid_client", "error_description": "Invalid client_secret"}, 401
+    # For registered clients, verify client_secret
+    if client_id in _client_registry:
+        client = _client_registry[client_id]
+        if _hash(client_secret) != client["client_secret"]:
+            return {"error": "invalid_client", "error_description": "Invalid client_secret"}, 401
+    # Public clients: no client_secret required for refresh
 
     # Revoke old refresh token
     del _refresh_tokens[token_hash]
