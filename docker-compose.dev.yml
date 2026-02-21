@@ -15,9 +15,12 @@ services:
       - QRADAR_HOST=${QRADAR_HOST}
       - QRADAR_API_TOKEN=${QRADAR_API_TOKEN}
       - QRADAR_VERIFY_SSL=${QRADAR_VERIFY_SSL:-false}
+      - OAUTH_JWT_SECRET=${OAUTH_JWT_SECRET}
+      - OAUTH_USERNAME=${OAUTH_USERNAME:-admin}
+      - OAUTH_PASSWORD=${OAUTH_PASSWORD}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')" ]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -37,6 +37,9 @@ docker run -d \
   -e QRADAR_API_TOKEN="<your-qradar-sec-token>" \
   -e QRADAR_VERIFY_SSL="false" \
   -e MCP_API_KEY="<generate-a-strong-random-key>" \
+  -e OAUTH_JWT_SECRET="<generate-a-strong-random-secret>" \
+  -e OAUTH_USERNAME="admin" \
+  -e OAUTH_PASSWORD="<choose-a-strong-password>" \
   ghcr.io/ibm/qradar-mcp-server:latest
 ```
 
@@ -49,14 +52,18 @@ What each part does:
 | `QRADAR_API_TOKEN` | QRadar authorized service token — get it from: QRadar Console → Admin → Authorized Services → Add |
 | `QRADAR_VERIFY_SSL` | Set to `false` for self-signed certs, `true` for production |
 | `MCP_API_KEY` | Shared secret clients must send as `Authorization: Bearer <key>` |
+| `OAUTH_JWT_SECRET` | Secret for signing JWT tokens — enables OAuth 2.1 |
+| `OAUTH_USERNAME` | Username for the OAuth login page (default: `admin`) |
+| `OAUTH_PASSWORD` | Password for the OAuth login page |
 
-> **Generating a strong `MCP_API_KEY`:**
+> **Generating strong secrets:**
 >
 > ```bash
-> openssl rand -base64 32
+> openssl rand -base64 32   # Use for MCP_API_KEY
+> openssl rand -base64 32   # Use for OAUTH_JWT_SECRET (separate value!)
 > ```
 >
-> Copy the output — this is your `MCP_API_KEY`. Keep it secret; share only with authorized clients.
+> Keep these secret; share only with authorized clients.
 
 See the [Configuration Reference](README.md#configuration) in the README for all optional variables (API version, timeout, etc.).
 
@@ -76,7 +83,8 @@ Expected response:
   "mode": "http",
   "tools": 4,
   "endpoints": 728,
-  "auth_required": true
+  "auth_required": true,
+  "oauth_enabled": true
 }
 ```
 
@@ -240,6 +248,8 @@ export QRADAR_HOST=https://<your-qradar-console>
 export QRADAR_API_TOKEN=<your-sec-token>
 export QRADAR_VERIFY_SSL=false
 export MCP_API_KEY=<your-api-key>
+export OAUTH_JWT_SECRET=$(openssl rand -base64 32)
+export OAUTH_PASSWORD=<your-oauth-password>
 
 python -m src
 ```
