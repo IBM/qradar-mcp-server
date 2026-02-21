@@ -32,7 +32,8 @@ env.bak/
 venv.bak/
 
 # IDE
-.vscode/
+.vscode/*
+!.vscode/mcp.json
 .idea/
 *.swp
 *.swo
@@ -68,3 +69,5 @@ htmlcov/
 
 # Local docs and configs (not for GitHub)
 IBM-BOT-ISSUE-TEMPLATE.md
+mcp-servers-containers-config.json
+nohup.out

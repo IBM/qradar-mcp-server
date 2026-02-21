@@ -1,0 +1,17 @@
+{
+  "servers": {
+    "qradar-mcp-server": {
+      "type": "sse",
+      "url": "http://${env:MCP_SERVER_HOST}:8001/sse",
+      "headers": {
+        "Authorization": "Bearer ${env:MCP_API_KEY}"
+      },
+      "alwaysAllow": [
+        "qradar_get",
+        "qradar_execute",
+        "qradar_delete",
+        "qradar_discover"
+      ]
+    }
+  }
+}

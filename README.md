@@ -16,11 +16,31 @@ QRadar MCP Server bridges **Large Language Models (LLMs)** and **IBM QRadar SIEM
 | ~50,000 tokens/request | **~2,000 tokens/request** |
 | Context overflow risk | Fits any LLM context |
 
-Works with any MCP-compatible client: Claude Desktop, custom AI agents, or direct HTTP calls.
+Works with any MCP-compatible client: Claude Desktop, IBM Bob, VS Code (GitHub Copilot), or custom AI agents.
 
 ---
 
-## Quick Start
+## What You Can Do
+
+Ask your AI assistant to interact with QRadar SIEM using natural language — no API calls, no console navigation:
+
+- *"Show me the top 10 open offenses"*
+- *"Search for failed login events from external IPs in the last hour"*
+- *"What assets are in my network inventory?"*
+- *"Create an Ariel AQL search for DNS queries to suspicious domains"*
+- *"List all active custom rules"*
+- *"Add 192.168.1.100 to the suspicious IPs reference set"*
+- *"What QRadar API endpoints are available for offense management?"*
+
+Authentication happens automatically — the server uses your QRadar API token for every request. No credentials in your prompts, ever.
+
+---
+
+## Getting Started
+
+> 📖 [Full Setup Guide](SETUP_GUIDE.md) — Complete step-by-step instructions for server admins and clients, including deployment, client onboarding for Claude Desktop and IBM Bob, key rotation, and troubleshooting.
+
+### Quick Start (Admin)
 
 ### Prerequisites
 
@@ -66,6 +86,26 @@ Expected response:
 ```
 
 That's it — the MCP server is running and ready to use.
+
+### Quick Start (Client)
+
+Get the server URL and API key from your admin. Add to `.vscode/mcp.json` in your project root:
+
+```json
+{
+  "servers": {
+    "qradar-mcp-server": {
+      "type": "sse",
+      "url": "http://<mcp-server-host>:8001/sse",
+      "headers": {
+        "Authorization": "Bearer <your-api-key>"
+      }
+    }
+  }
+}
+```
+
+Reload VS Code (`Cmd+Shift+P` → **Reload Window**) and start chatting via GitHub Copilot. See the [Setup Guide](SETUP_GUIDE.md) for Claude Desktop and IBM Bob configuration.
 
 ---
 
@@ -158,6 +198,19 @@ Then ask Claude things like:
 |------|------|----------|
 | HTTP/SSE (default) | `--host 0.0.0.0 --port 8001` | Containers, web clients, direct API |
 | stdio | `--stdio` | Claude Desktop, local CLI tools |
+
+---
+
+## Security
+
+The MCP server has two layers of authentication — one to protect the MCP server itself, and one to authenticate with QRadar.
+
+| Layer | Purpose | How it works |
+|-------|---------|-------------|
+| **Layer 1 — MCP API Key** | Prevents unauthorized clients from connecting to the MCP server | Client sends `Authorization: Bearer <key>` header. MCP server validates against `MCP_API_KEY`. Invalid or missing key → `401 Unauthorized`. |
+| **Layer 2 — QRadar SEC Token** | Authenticates the MCP server to QRadar's REST API | MCP server attaches `SEC: <token>` header to every QRadar API call. Set via `QRADAR_API_TOKEN` env var. |
+
+> **stdio mode** (Claude Desktop local usage) is exempt from Layer 1 API key validation — the user runs the process locally with their own QRadar token; QRadar (Layer 2) is the security gate.
 
 ---
 
@@ -263,6 +316,15 @@ SIEM (offenses, sources, destinations) · Assets (model, vulnerabilities) · Ana
 
 ---
 
+## Resources
+
+- [IBM QRadar SIEM Documentation](https://www.ibm.com/docs/en/qsip)
+- [QRadar REST API Reference](https://www.ibm.com/docs/en/qsip/7.5?topic=versions-rest-api-v260-reference)
+- [Container Image on ghcr.io](https://github.com/orgs/IBM/packages/container/package/qradar-mcp-server)
+- [Full Setup Guide](SETUP_GUIDE.md)
+
+---
+
 ## Support
 
 **Found a bug?**
@@ -278,6 +340,6 @@ SIEM (offenses, sources, destinations) · Assets (model, vulnerabilities) · Ana
 
 ---
 
-## Disclaimer
+## IBM Public Repository Disclosure
 
 All content in this repository including code has been provided by IBM under the associated open source software license and IBM is under no obligation to provide enhancements, updates, or support. IBM developers produced this code as an open source project (not as an IBM product), and IBM makes no assertions as to the level of quality nor security, and will not be maintaining this code going forward.
