@@ -88,8 +88,8 @@ async def main_http(host: str = "0.0.0.0", port: int = 8001):
                 return await call_next(request)
             if not _check_api_key(request):
                 return JSONResponse(
-                    {"error": "Unauthorized. Provide Authorization: Bearer <MCP_API_KEY> header."},
-                    status_code=401,
+                    {"error": "Forbidden. Provide Authorization: Bearer <MCP_API_KEY> header."},
+                    status_code=403,
                 )
             return await call_next(request)
     
