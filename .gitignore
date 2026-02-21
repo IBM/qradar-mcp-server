@@ -32,8 +32,7 @@ env.bak/
 venv.bak/
 
 # IDE
-.vscode/*
-!.vscode/mcp.json
+.vscode/
 .idea/
 *.swp
 *.swo

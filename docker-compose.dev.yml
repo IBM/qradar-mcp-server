@@ -1,0 +1,24 @@
+# Local development compose file
+# Usage: docker compose -f docker-compose.dev.yml up --build
+# Reads secrets from .env (gitignored)
+
+services:
+  qradar-mcp-server:
+    build:
+      context: .
+      dockerfile: container/Dockerfile
+    container_name: qradar-mcp-server-dev
+    ports:
+      - "8001:8001"
+    environment:
+      - MCP_API_KEY=${MCP_API_KEY}
+      - QRADAR_HOST=${QRADAR_HOST}
+      - QRADAR_API_TOKEN=${QRADAR_API_TOKEN}
+      - QRADAR_VERIFY_SSL=${QRADAR_VERIFY_SSL:-false}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
