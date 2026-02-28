@@ -74,7 +74,7 @@ flowchart TB
 
 📧 [ashrivastava@ibm.com](mailto:ashrivastava@ibm.com)
 
-For demos, integration help, or collaboration — open a [GitHub Issue](https://github.com/IBM/qradar-mcp-server/issues) or reach out via email.
+For demos, integration help, or collaboration — reach out via email.
 
 ---
 
