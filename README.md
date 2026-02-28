@@ -68,6 +68,16 @@ flowchart TB
 
 ---
 
+## Contact
+
+**Maintainer:** Anuj Shrivastava — IBM Security
+
+📧 [ashrivastava@ibm.com](mailto:ashrivastava@ibm.com)
+
+For demos, integration help, or collaboration — open a [GitHub Issue](https://github.com/IBM/qradar-mcp-server/issues) or reach out via email.
+
+---
+
 > **Disclaimer:** This is a Minimum Viable Product (MVP) for testing and demonstration purposes only. Not for production use. No warranty or support guarantees.
 
 ## IBM Public Repository Disclosure
