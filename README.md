@@ -76,8 +76,6 @@ flowchart TB
 
 For demos, integration help, or collaboration — reach out via email.
 
----
-
 > **Disclaimer:** This is a Minimum Viable Product (MVP) for testing and demonstration purposes only. Not for production use. No warranty or support guarantees.
 
 ## IBM Public Repository Disclosure
