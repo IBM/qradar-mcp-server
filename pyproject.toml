@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "qradar-mcp-server"
+version = "2.0.0"
+description = "MCP server for IBM QRadar SIEM — 4 intelligent tools covering all 728 QRadar API endpoints"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "IBM" },
+]
+keywords = ["mcp", "qradar", "siem", "ibm", "security", "api"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: System :: Monitoring",
+]
+dependencies = [
+    "mcp[cli]>=1.8.0",
+    "httpx>=0.25.0",
+    "uvicorn>=0.30.0",
+    "starlette>=0.38.0",
+]
+
+[project.scripts]
+qradar-mcp-server = "src.server:main"
+
+[project.urls]
+Homepage = "https://github.com/IBM/qradar-mcp-server"
+Repository = "https://github.com/IBM/qradar-mcp-server"
+Issues = "https://github.com/IBM/qradar-mcp-server/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
