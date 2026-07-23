@@ -56,9 +56,13 @@ async def main_stdio():
 
 
 def _check_auth(request) -> bool:
-    """Validate request authentication via static API key."""
+    """Validate request authentication via static API key.
+
+    Returns False (deny) when MCP_API_KEY is not configured — server
+    must not be open by default. Set MCP_API_KEY env var to grant access.
+    """
     if not MCP_API_KEY:
-        return True  # No auth configured — allow all requests
+        return False  # No key configured — deny all requests (fail secure)
     auth_header = request.headers.get("authorization", "")
     if not auth_header.startswith("Bearer "):
         return False
@@ -72,36 +76,30 @@ async def main_http(host: str = "0.0.0.0", port: int = 8001):
     from starlette.applications import Starlette
     from starlette.routing import Route, Mount
     from starlette.responses import JSONResponse
-    from starlette.middleware import Middleware
-    from starlette.middleware.base import BaseHTTPMiddleware
     import uvicorn
 
     auth_required = bool(MCP_API_KEY)
     logger.info(f"QRadar MCP Server [HTTP] - 4 tools, 728 endpoints on {host}:{port}")
-    logger.info(f"  API key authentication: {'ENABLED' if auth_required else 'DISABLED (set MCP_API_KEY to enable)'}")
+    logger.info(f"  API key authentication: {'ENABLED' if auth_required else 'LOCKED — MCP_API_KEY not set, ALL requests will be rejected with HTTP 401'}")
     
     sse = SseServerTransport("/messages/")
 
-    # --- Auth middleware (protects /sse, /messages, /tools) ---
-    _PUBLIC_PATHS = {"/health"}
+    _UNAUTHORIZED = JSONResponse(
+        {"error": "Unauthorized. Provide Authorization: Bearer <MCP_API_KEY> header."},
+        status_code=401,
+    )
 
-    class AuthMiddleware(BaseHTTPMiddleware):
-        async def dispatch(self, request, call_next):
-            if request.url.path in _PUBLIC_PATHS:
-                return await call_next(request)
-            if not _check_auth(request):
-                return JSONResponse(
-                    {"error": "Unauthorized. Provide Authorization: Bearer <MCP_API_KEY> header."},
-                    status_code=401,
-                )
-            return await call_next(request)
-    
-    # --- MCP SSE handlers ---
+    # --- MCP SSE handlers (auth checked inline — BaseHTTPMiddleware
+    #     is incompatible with raw ASGI SSE streaming) ---
     async def handle_sse(request):
+        if not _check_auth(request):
+            return _UNAUTHORIZED
         async with sse.connect_sse(request.scope, request.receive, request._send) as streams:
             await server.run(streams[0], streams[1], server.create_initialization_options())
     
     async def handle_messages(request):
+        if not _check_auth(request):
+            return _UNAUTHORIZED
         await sse.handle_post_message(request.scope, request.receive, request._send)
     
     # --- Health ---
@@ -117,6 +115,8 @@ async def main_http(host: str = "0.0.0.0", port: int = 8001):
     # --- Direct REST API endpoints ---
     async def list_tools_api(request):
         """Return list of available tools."""
+        if not _check_auth(request):
+            return _UNAUTHORIZED
         tools_list = [
             {
                 "name": t.name,
@@ -129,6 +129,8 @@ async def main_http(host: str = "0.0.0.0", port: int = 8001):
     
     async def call_tool_api(request):
         """Execute a tool and return result."""
+        if not _check_auth(request):
+            return _UNAUTHORIZED
         try:
             body = await request.json()
             tool_name = body.get("name")
@@ -147,17 +149,16 @@ async def main_http(host: str = "0.0.0.0", port: int = 8001):
         except Exception as e:
             return JSONResponse({"error": str(e)}, status_code=500)
 
-    middleware = [Middleware(AuthMiddleware)] if auth_required else []
-
     app = Starlette(
         routes=[
             Route("/sse", endpoint=handle_sse),
-            Mount("/messages/", app=sse.handle_post_message),
+            # Auth-wrapped messages handler (do not mount raw sse.handle_post_message)
+            Route("/messages/", endpoint=handle_messages, methods=["POST"]),
+            Route("/messages/{path:path}", endpoint=handle_messages, methods=["POST"]),
             Route("/health", endpoint=health),
             Route("/tools", endpoint=list_tools_api),
             Route("/tools/call", endpoint=call_tool_api, methods=["POST"]),
         ],
-        middleware=middleware,
     )
     
     config = uvicorn.Config(app, host=host, port=port, log_level="info")
