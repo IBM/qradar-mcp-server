@@ -11,6 +11,22 @@ from typing import Optional
 logger = logging.getLogger("qradar-mcp")
 
 
+def hosts_equivalent(left: str, right: str) -> bool:
+    """Compare QRadar hosts without scheme, trailing slash, or default :443."""
+
+    def _norm(value: str) -> str:
+        host = (value or "").strip().rstrip("/").lower()
+        if host.startswith("https://"):
+            host = host[8:]
+        elif host.startswith("http://"):
+            host = host[7:]
+        if host.endswith(":443"):
+            host = host[:-4]
+        return host
+
+    return bool(left) and bool(right) and _norm(left) == _norm(right)
+
+
 class QRadarConfig:
     """Load and validate QRadar configuration from environment variables."""
 
@@ -22,9 +38,19 @@ class QRadarConfig:
         verify_ssl: Optional[bool] = None,
         timeout: float = 120.0,
     ):
-        # Priority: Constructor args > Environment variables
-        self.host = (host or os.environ.get("QRADAR_HOST", "")).rstrip("/")
-        self.api_token = api_token or os.environ.get("QRADAR_API_TOKEN", "")
+        env_host = os.environ.get("QRADAR_HOST", "")
+        env_token = os.environ.get("QRADAR_API_TOKEN", "")
+        explicit_host = host is not None
+        explicit_token = api_token is not None
+
+        self.host = (host if explicit_host else env_host).rstrip("/")
+        if explicit_token:
+            self.api_token = api_token or ""
+        elif explicit_host and not hosts_equivalent(self.host, env_host):
+            # Do not attach the operator env token to a caller-chosen host.
+            self.api_token = ""
+        else:
+            self.api_token = env_token
         self.api_version = api_version if api_version != "20.0" else os.environ.get("QRADAR_API_VERSION", "20.0")
         self.timeout = timeout
 

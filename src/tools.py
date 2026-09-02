@@ -20,6 +20,40 @@ from .discovery import (
     _endpoint_cache,
 )
 
+HOST_WITHOUT_TOKEN_ERROR = (
+    "qradar_host override requires qradar_token. "
+    "The server will not send the configured API token to a caller-chosen host."
+)
+
+
+def _nonempty(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def apply_connection_overrides(client: QRadarClient, args: dict) -> QRadarClient:
+    """Apply per-call host, token, and version overrides.
+
+    Host and token must travel together. A host-only override is rejected so
+    the operator token is never sent to a caller-chosen host.
+    """
+    qradar_host = args.get("qradar_host")
+    qradar_token = args.get("qradar_token")
+    qradar_version = args.get("qradar_version")
+
+    if _nonempty(qradar_host) and not _nonempty(qradar_token):
+        raise ValueError(HOST_WITHOUT_TOKEN_ERROR)
+
+    if not (_nonempty(qradar_host) or _nonempty(qradar_token) or _nonempty(qradar_version)):
+        return client
+
+    return QRadarClient(
+        host=qradar_host if _nonempty(qradar_host) else client.host,
+        api_token=qradar_token if _nonempty(qradar_token) else client.api_token,
+        api_version=qradar_version if _nonempty(qradar_version) else client.config.api_version,
+        verify_ssl=client.verify_ssl,
+        timeout=client.timeout,
+    )
+
 
 TOOLS: list[Tool] = [
     Tool(
@@ -41,8 +75,8 @@ Examples:
                 "filter": {"type": "string", "description": "AQL filter"},
                 "fields": {"type": "string", "description": "Fields to return"},
                 "range": {"type": "string", "description": "Pagination (e.g., 0-49)"},
-                "qradar_host": {"type": "string", "description": "QRadar host (optional, overrides env)"},
-                "qradar_token": {"type": "string", "description": "API token (optional, overrides env)"},
+                "qradar_host": {"type": "string", "description": "QRadar host override; requires qradar_token"},
+                "qradar_token": {"type": "string", "description": "API token for this host (required with qradar_host)"},
                 "qradar_version": {"type": "string", "description": "API version override (e.g. '25.0')"},
             },
             "required": ["endpoint"]
@@ -62,8 +96,8 @@ Examples:
             "type": "object",
             "properties": {
                 "endpoint": {"type": "string", "description": "API path with resource ID"},
-                "qradar_host": {"type": "string", "description": "QRadar host (optional, overrides env)"},
-                "qradar_token": {"type": "string", "description": "API token (optional, overrides env)"},
+                "qradar_host": {"type": "string", "description": "QRadar host override; requires qradar_token"},
+                "qradar_token": {"type": "string", "description": "API token for this host (required with qradar_host)"},
                 "qradar_version": {"type": "string", "description": "API version override (e.g. '25.0')"},
             },
             "required": ["endpoint"]
@@ -90,8 +124,8 @@ Examples:
                 "search": {"type": "string", "description": "Search term for path/description"},
                 "method": {"type": "string", "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"]},
                 "limit": {"type": "integer", "default": 10},
-                "qradar_host": {"type": "string", "description": "QRadar host (optional, overrides env)"},
-                "qradar_token": {"type": "string", "description": "API token (optional, overrides env)"},
+                "qradar_host": {"type": "string", "description": "QRadar host override; requires qradar_token"},
+                "qradar_token": {"type": "string", "description": "API token for this host (required with qradar_host)"},
                 "qradar_version": {"type": "string", "description": "API version override (e.g. '25.0')"},
             },
             "required": ["search"]
@@ -115,8 +149,8 @@ Examples:
                 "endpoint": {"type": "string", "description": "EXACT path from qradar_discover"},
                 "params": {"type": "object", "description": "Query parameters"},
                 "body": {"type": "object", "description": "Request body (for BODY type params)"},
-                "qradar_host": {"type": "string", "description": "QRadar host (optional, overrides env)"},
-                "qradar_token": {"type": "string", "description": "API token (optional, overrides env)"},
+                "qradar_host": {"type": "string", "description": "QRadar host override; requires qradar_token"},
+                "qradar_token": {"type": "string", "description": "API token for this host (required with qradar_host)"},
                 "qradar_version": {"type": "string", "description": "API version override (e.g. '25.0')"},
             },
             "required": ["method", "endpoint"]
@@ -127,24 +161,13 @@ Examples:
 
 async def execute_tool(client: QRadarClient, name: str, args: dict) -> dict[str, Any]:
     """Execute tool with optional credential override from arguments.
-    
-    Priority: args credentials > client credentials > environment variables
+
+    A host override is accepted only when the caller also supplies a token.
     """
-    # Check if credentials provided in arguments
-    qradar_host = args.get("qradar_host")
-    qradar_token = args.get("qradar_token")
-    qradar_version = args.get("qradar_version")
-    
-    # If credentials in args, create new client with those credentials
-    if qradar_host or qradar_token or qradar_version:
-        from .client import QRadarClient
-        client = QRadarClient(
-            host=qradar_host or client.host,
-            api_token=qradar_token or client.api_token,
-            api_version=qradar_version or client.config.api_version,
-            verify_ssl=client.verify_ssl,
-            timeout=client.timeout
-        )
+    try:
+        client = apply_connection_overrides(client, args)
+    except ValueError as e:
+        return {"success": False, "error": str(e)}
     
     if name == "qradar_get":
         return await _do_get(client, args)

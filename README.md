@@ -253,7 +253,9 @@ flowchart TB
 3. You give the **same key** to each authorized MCP client (Claude Desktop, IBM Bob, etc.).
 4. On every request, the server compares the client's `Authorization: Bearer <key>` header against `MCP_API_KEY`. If they don't match — **access denied**.
 
-> The key is a shared secret between you (the server admin) and your authorized clients. Someone else running `openssl rand -base64 32` on their own machine gets a completely different random string — it will not match your server's key.
+> The key is a shared secret between you (the server admin) and your authorized clients. Someone else running `openssl rand -base64 32` on their own machine gets a completely different random string, it will not match your server's key.
+
+**Per-call host override:** a tool call may name a different `qradar_host` only when it also supplies `qradar_token` for that host. A host-only override is rejected so the operator `QRADAR_API_TOKEN` never leaves the configured console.
 
 ---
 

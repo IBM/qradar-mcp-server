@@ -137,10 +137,7 @@ async def main_http(host: str = "0.0.0.0", port: int = 8001):
             arguments = body.get("arguments", {})
             
             from .client import QRadarClient
-            client = QRadarClient(
-                host=arguments.get("qradar_host"),
-                api_token=arguments.get("qradar_token")
-            )
+            client = QRadarClient()
             result = await execute_tool(client, tool_name, arguments)
             
             return JSONResponse({"result": result})
